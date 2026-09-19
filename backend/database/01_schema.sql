@@ -1,140 +1,75 @@
--- =========================================================
--- BANCO DE DADOS - SAÚDE EM DIA
--- =========================================================
+-- =====================================================================
+-- SAÚDE EM DIA — SCRIPT DE CRIAÇÃO DO BANCO DE DADOS
+-- Execute este arquivo inteiro no MySQL Workbench (Ctrl+Shift+Enter
+-- executa tudo de uma vez).
+-- =====================================================================
 
 CREATE DATABASE IF NOT EXISTS saude_em_dia
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 
 USE saude_em_dia;
 
+-- ---------------------------------------------------------------------
+-- Tabela: usuarios
+-- Representa os pacientes cadastrados no aplicativo.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS usuarios (
+    id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nome             VARCHAR(150)    NOT NULL,
+    email            VARCHAR(150)    NOT NULL,
+    senha            VARCHAR(255)    NOT NULL,
+    telefone         VARCHAR(20)     NULL,
+    data_nascimento  DATE            NULL,
+    ativo            TINYINT(1)      NOT NULL DEFAULT 1,
+    criado_em        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
--- =========================================================
--- TABELA: USUARIOS
--- Apenas pacientes que utilizarão o aplicativo
--- =========================================================
+    UNIQUE KEY uq_usuarios_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+-- ---------------------------------------------------------------------
+-- Tabela: receitas
+-- Cada receita pertence a um paciente (usuario).
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS receitas (
+    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id     INT UNSIGNED    NOT NULL,
+    data_receita   DATE            NOT NULL,
+    medico         VARCHAR(150)    NOT NULL,
+    especialidade  VARCHAR(100)    NOT NULL,
+    arquivo_url    VARCHAR(500)    NULL,
+    tipo_arquivo   VARCHAR(20)     NULL,
+    nome_arquivo   VARCHAR(255)    NULL,
+    criado_em      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    nome VARCHAR(150) NOT NULL,
-
-    cpf VARCHAR(14) NOT NULL UNIQUE,
-
-    email VARCHAR(150) NOT NULL UNIQUE,
-
-    senha VARCHAR(255) NOT NULL,
-
-    status ENUM('ativo', 'inativo', 'bloqueado')
-        NOT NULL DEFAULT 'ativo',
-
-    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP
-);
-
-
--- =========================================================
--- TABELA: RECEITAS
--- Receitas cadastradas pelos pacientes
--- =========================================================
-
-CREATE TABLE receitas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    usuario_id INT NOT NULL,
-
-    data_receita DATE NOT NULL,
-
-    medico VARCHAR(150) NOT NULL,
-
-    especialidade VARCHAR(100) NOT NULL,
-
-    nome_arquivo VARCHAR(255),
-
-    tipo_arquivo ENUM('imagem', 'pdf'),
-
-    caminho_arquivo VARCHAR(500),
-
-    observacoes TEXT,
-
-    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_receita_usuario
-        FOREIGN KEY (usuario_id)
-        REFERENCES usuarios(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
-);
-
-
--- =========================================================
--- TABELA: MEDICAMENTOS
--- Medicamentos relacionados às receitas
--- =========================================================
-
-CREATE TABLE medicamentos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    usuario_id INT NOT NULL,
-
-    receita_id INT NOT NULL,
-
-    nome VARCHAR(150) NOT NULL,
-
-    dosagem VARCHAR(100) NOT NULL,
-
-    intervalo_horas INT NOT NULL,
-
-    duracao_dias INT NOT NULL,
-
-    horario_inicio TIME NOT NULL,
-
-    observacoes TEXT,
-
-    status ENUM('ativo', 'finalizado', 'pausado')
-        NOT NULL DEFAULT 'ativo',
-
-    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_medicamento_usuario
-        FOREIGN KEY (usuario_id)
-        REFERENCES usuarios(id)
+    CONSTRAINT fk_receitas_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
 
-    CONSTRAINT fk_medicamento_receita
-        FOREIGN KEY (receita_id)
-        REFERENCES receitas(id)
+    INDEX idx_receitas_usuario (usuario_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------
+-- Tabela: medicamentos
+-- Cada medicamento pertence a uma receita.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS medicamentos (
+    id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    receita_id       INT UNSIGNED    NOT NULL,
+    nome             VARCHAR(150)    NOT NULL,
+    dosagem          VARCHAR(50)     NOT NULL,
+    intervalo_horas  INT UNSIGNED    NOT NULL,
+    horario_inicio   TIME            NOT NULL,
+    duracao_dias     INT UNSIGNED    NOT NULL,
+    observacoes      VARCHAR(255)    NULL,
+    ativo            TINYINT(1)      NOT NULL DEFAULT 1,
+    criado_em        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_medicamentos_receita
+        FOREIGN KEY (receita_id) REFERENCES receitas (id)
         ON DELETE CASCADE
-        ON UPDATE CASCADE
-);
+        ON UPDATE CASCADE,
 
-
--- =========================================================
--- ÍNDICES
--- Melhoram a busca dos registros
--- =========================================================
-
-CREATE INDEX idx_receitas_usuario
-ON receitas(usuario_id);
-
-CREATE INDEX idx_medicamentos_usuario
-ON medicamentos(usuario_id);
-
-CREATE INDEX idx_medicamentos_receita
-ON medicamentos(receita_id);
-
-
--- =========================================================
--- VERIFICAÇÃO DAS TABELAS
--- =========================================================
-
-SHOW TABLES;
+    INDEX idx_medicamentos_receita (receita_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
