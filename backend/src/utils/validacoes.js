@@ -98,6 +98,43 @@ function idValido(valor) {
 }
 
 
+// Número inteiro entre min e max. Aceita 8 ou "8" (formulários enviam texto).
+// Devolve o número ou null se for inválido (ex.: 8.5, "abc", 0, negativo).
+function inteiroEntre(valor, min, max) {
+    let numero;
+
+    if (typeof valor === 'number') {
+        numero = valor;
+    } else if (typeof valor === 'string' && /^\d{1,6}$/.test(valor.trim())) {
+        numero = Number(valor.trim());
+    } else {
+        return null;
+    }
+
+    if (!Number.isInteger(numero) || numero < min || numero > max) {
+        return null;
+    }
+
+    return numero;
+}
+
+
+// Horário "8:00", "08:00" ou "08:00:00". Devolve "HH:MM:SS" ou null.
+function horarioValido(valor) {
+    if (typeof valor !== 'string') {
+        return null;
+    }
+
+    const partes = valor.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
+
+    if (!partes) {
+        return null;
+    }
+
+    return `${partes[1].padStart(2, '0')}:${partes[2]}:${partes[3] || '00'}`;
+}
+
+
 function senhaValida(senha) {
     return (
         ehTexto(senha) &&
@@ -117,5 +154,7 @@ module.exports = {
     dataNascimentoValida,
     dataReceitaValida,
     idValido,
+    inteiroEntre,
+    horarioValido,
     senhaValida
 };

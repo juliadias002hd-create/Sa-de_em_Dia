@@ -12,6 +12,10 @@ const {
     baixarArquivo
 } = require('../controllers/receita_controller');
 
+const {
+    listarPorReceita
+} = require('../controllers/medicamento_controller');
+
 const router = express.Router();
 
 
@@ -29,6 +33,9 @@ router.get('/', listar);
 
 // GET /api/receitas/:id/arquivo
 router.get('/:id/arquivo', baixarArquivo);
+
+// GET /api/receitas/:receitaId/medicamentos
+router.get('/:receitaId/medicamentos', listarPorReceita);
 
 // GET /api/receitas/:id
 router.get('/:id', buscarPorId);
