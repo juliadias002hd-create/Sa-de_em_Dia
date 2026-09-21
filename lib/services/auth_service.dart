@@ -1,0 +1,61 @@
+import '../models/usuario.dart';
+import 'api_service.dart';
+import 'token_storage.dart';
+
+/// Cadastro, login e dados do paciente logado.
+class AuthService {
+  final ApiService _api = ApiService.instance;
+
+  /// POST /api/auth/register
+  Future<Usuario> cadastrar({
+    required String nome,
+    required String email,
+    required String senha,
+    required String confirmarSenha,
+    String? telefone,
+    String? dataNascimentoIso,
+  }) async {
+    final resposta = await _api.post('/api/auth/register', {
+      'nome': nome,
+      'email': email,
+      'senha': senha,
+      'confirmar_senha': confirmarSenha,
+      'telefone': telefone,
+      'data_nascimento': dataNascimentoIso,
+    });
+
+    return Usuario.fromJson(resposta['data']['usuario']);
+  }
+
+  /// POST /api/auth/login  (guarda o token para as próximas requisições)
+  Future<Usuario> entrar({
+    required String email,
+    required String senha,
+  }) async {
+    final resposta = await _api.post('/api/auth/login', {
+      'email': email,
+      'senha': senha,
+    });
+
+    final token = resposta['data']['token'] as String;
+
+    _api.definirToken(token);
+
+    await TokenStorage.salvar(token);
+
+    return Usuario.fromJson(resposta['data']['usuario']);
+  }
+
+  /// GET /api/auth/me
+  Future<Usuario> meusDados() async {
+    final resposta = await _api.get('/api/auth/me');
+
+    return Usuario.fromJson(resposta['data']['usuario']);
+  }
+
+  Future<void> sair() async {
+    _api.definirToken(null);
+
+    await TokenStorage.apagar();
+  }
+}
