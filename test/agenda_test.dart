@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:saude_em_dia/models/historico.dart';
 import 'package:saude_em_dia/models/medicamento.dart';
 import 'package:saude_em_dia/utils/agenda.dart';
 import 'package:saude_em_dia/utils/formatters.dart';
@@ -128,6 +129,135 @@ void main() {
 
       expect(Agenda.status(DateTime(2026, 9, 18, 16, 0), agora), StatusDose.aTomar);
       expect(Agenda.status(DateTime(2026, 9, 18, 8, 0), agora), StatusDose.atrasado);
+    });
+
+    test('dose com registro é sempre "tomado", mesmo no passado ou futuro', () {
+      final agora = DateTime(2026, 9, 18, 12, 0);
+
+      expect(
+        Agenda.status(DateTime(2026, 9, 18, 8, 0), agora, tomado: true),
+        StatusDose.tomado,
+      );
+      expect(
+        Agenda.status(DateTime(2026, 9, 18, 16, 0), agora, tomado: true),
+        StatusDose.tomado,
+      );
+    });
+
+    test('a chave da dose ignora segundos e diferencia medicamentos', () {
+      expect(
+        Agenda.chave(7, DateTime(2026, 9, 21, 8, 0, 45)),
+        Agenda.chave(7, DateTime(2026, 9, 21, 8, 0)),
+      );
+      expect(Agenda.chave(7, DateTime(2026, 9, 21, 8, 0)), '7|2026-09-21 08:00');
+      expect(
+        Agenda.chave(7, DateTime(2026, 9, 21, 8, 0)),
+        isNot(Agenda.chave(8, DateTime(2026, 9, 21, 8, 0))),
+      );
+    });
+  });
+
+  group('Agenda.historico', () {
+    // Paracetamol de 8 em 8 horas, início 08:00. Cadastrado dia 18 às 07:00.
+    final m = medicamento(
+      horarioInicio: '08:00:00',
+      intervalo: 8,
+      dias: 5,
+      criadoEm: DateTime(2026, 9, 18, 7, 0),
+    );
+
+    RegistroDose registro(int id, DateTime previsto, DateTime tomado) {
+      return RegistroDose(
+        id: id,
+        medicamentoId: 1,
+        medicamentoNome: 'Paracetamol',
+        medicamentoDosagem: '500 mg',
+        horarioPrevisto: previsto,
+        horarioTomado: tomado,
+      );
+    }
+
+    test('dose com registro é Tomado e sem registro é Atrasado', () {
+      final dias = Agenda.historico(
+        medicamentos: [m],
+        registros: [
+          registro(1, DateTime(2026, 9, 18, 8, 0), DateTime(2026, 9, 18, 8, 5)),
+        ],
+        inicio: DateTime(2026, 9, 18),
+        fim: DateTime(2026, 9, 18),
+        agora: DateTime(2026, 9, 18, 20, 0),
+      );
+
+      expect(dias.length, 1);
+
+      // 08:00 tomado; 16:00 sem registro; 00:00 é do dia seguinte.
+      final itens = dias.first.itens;
+
+      expect(itens.map((i) => hm(i.horario)).toList(), ['08:00', '16:00']);
+      expect(itens[0].status, StatusDose.tomado);
+      expect(itens[0].horarioTomado, DateTime(2026, 9, 18, 8, 5));
+      expect(itens[1].status, StatusDose.atrasado);
+      expect(dias.first.tomadas, 1);
+    });
+
+    test('não inclui doses que ainda não chegaram', () {
+      final dias = Agenda.historico(
+        medicamentos: [m],
+        registros: const [],
+        inicio: DateTime(2026, 9, 18),
+        fim: DateTime(2026, 9, 18),
+        agora: DateTime(2026, 9, 18, 12, 0),
+      );
+
+      expect(dias.single.itens.map((i) => hm(i.horario)).toList(), ['08:00']);
+    });
+
+    test('dias vêm do mais recente para o mais antigo', () {
+      final dias = Agenda.historico(
+        medicamentos: [m],
+        registros: const [],
+        inicio: DateTime(2026, 9, 18),
+        fim: DateTime(2026, 9, 20),
+        agora: DateTime(2026, 9, 20, 23, 0),
+      );
+
+      final datas = dias.map((d) => d.dia.day).toList();
+
+      expect(datas, [20, 19, 18]);
+    });
+
+    test('registro sem dose correspondente (medicamento pausado) aparece como Tomado', () {
+      final pausado = medicamento(
+        horarioInicio: '08:00:00',
+        intervalo: 8,
+        dias: 5,
+        criadoEm: DateTime(2026, 9, 18, 7, 0),
+        ativo: false,
+      );
+
+      final dias = Agenda.historico(
+        medicamentos: [pausado],
+        registros: [
+          registro(1, DateTime(2026, 9, 18, 8, 0), DateTime(2026, 9, 18, 8, 1)),
+        ],
+        inicio: DateTime(2026, 9, 18),
+        fim: DateTime(2026, 9, 18),
+        agora: DateTime(2026, 9, 18, 20, 0),
+      );
+
+      expect(dias.single.itens.single.status, StatusDose.tomado);
+    });
+
+    test('sem medicamentos nem registros, o histórico é vazio', () {
+      final dias = Agenda.historico(
+        medicamentos: const [],
+        registros: const [],
+        inicio: DateTime(2026, 9, 18),
+        fim: DateTime(2026, 9, 18),
+        agora: DateTime(2026, 9, 18, 20, 0),
+      );
+
+      expect(dias, isEmpty);
     });
   });
 

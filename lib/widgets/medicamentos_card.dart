@@ -127,24 +127,46 @@ class MedicamentoCard extends StatelessWidget {
 }
 
 
+/// Cores e rótulos de cada situação de uma dose.
+(String, Color) situacaoDaDose(StatusDose status) {
+  return switch (status) {
+    StatusDose.aTomar => ('A tomar', AppColors.roxo),
+    StatusDose.tomado => ('Tomado', AppColors.sucesso),
+    StatusDose.atrasado => ('Atrasado', AppColors.alerta),
+  };
+}
+
+
 /// Cartão de uma dose na tela inicial: horário, nome, dosagem e situação.
+///
+/// Com [aoTomar], mostra o botão "TOMAR" (dose ainda não tomada).
+/// Com [aoDesfazer], mostra "Desfazer" (dose já tomada).
 class DoseCard extends StatelessWidget {
   final DoseAgendada dose;
   final StatusDose status;
+
+  /// Quando a dose foi tomada (só para doses "Tomado").
+  final DateTime? horarioTomado;
+
+  final VoidCallback? aoTomar;
+  final VoidCallback? aoDesfazer;
+
+  /// Deixa os botões desativados enquanto uma chamada está em andamento.
+  final bool ocupado;
 
   const DoseCard({
     super.key,
     required this.dose,
     required this.status,
+    this.horarioTomado,
+    this.aoTomar,
+    this.aoDesfazer,
+    this.ocupado = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final (rotulo, cor) = switch (status) {
-      StatusDose.aTomar => ('A tomar', AppColors.roxo),
-      StatusDose.tomado => ('Tomado', AppColors.sucesso),
-      StatusDose.atrasado => ('Atrasado', AppColors.alerta),
-    };
+    final (rotulo, cor) = situacaoDaDose(status);
 
     final m = dose.medicamento;
 
@@ -187,27 +209,72 @@ class DoseCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    m.dosagem,
-                    style: const TextStyle(color: AppColors.textoSuave),
+                    horarioTomado == null
+                        ? m.dosagem
+                        : '${m.dosagem} • tomado às ${Datas.hora(horarioTomado!.hour, horarioTomado!.minute)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textoSuave,
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: cor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                rotulo,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: cor,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    rotulo,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: cor,
+                    ),
+                  ),
                 ),
-              ),
+                if (aoTomar != null) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 34,
+                    child: FilledButton(
+                      onPressed: ocupado ? null : aoTomar,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.sucesso,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      child: const Text('TOMAR'),
+                    ),
+                  ),
+                ],
+                if (aoDesfazer != null) ...[
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: 30,
+                    child: TextButton(
+                      onPressed: ocupado ? null : aoDesfazer,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        textStyle: const TextStyle(fontSize: 12),
+                      ),
+                      child: const Text('Desfazer'),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),

@@ -73,3 +73,32 @@ CREATE TABLE IF NOT EXISTS medicamentos (
 
     INDEX idx_medicamentos_receita (receita_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------
+-- Tabela: registros_doses
+-- Cada linha é UMA dose que o paciente marcou como tomada.
+-- Alimenta o Histórico e o status "Tomado" da tela inicial.
+--
+-- "A tomar" e "Atrasado" não são gravados: são calculados a partir do
+-- horário do medicamento (uma dose sem registro cujo horário já passou
+-- está "atrasada").
+-- Ao excluir o medicamento, seus registros são excluídos junto (CASCADE).
+-- O par (medicamento, horário previsto) é único: a mesma dose não pode
+-- ser marcada duas vezes.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS registros_doses (
+    id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    medicamento_id    INT UNSIGNED    NOT NULL,
+    horario_previsto  DATETIME        NOT NULL,
+    horario_tomado    DATETIME        NOT NULL,
+    status            VARCHAR(20)     NOT NULL DEFAULT 'tomado',
+    criado_em         DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_registros_medicamento
+        FOREIGN KEY (medicamento_id) REFERENCES medicamentos (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    UNIQUE KEY uq_registros_dose (medicamento_id, horario_previsto),
+    INDEX idx_registros_previsto (horario_previsto)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../models/historico.dart';
 import '../../models/medicamento.dart';
 import '../../services/api_service.dart';
 import '../../services/dados_notifier.dart';
+import '../../services/dose_service.dart';
 import '../../services/medicamentos_service.dart';
 import '../../services/session_controller.dart';
 import '../../theme/app_theme.dart';
@@ -23,8 +25,16 @@ class InicioTab extends StatefulWidget {
 
 class _InicioTabState extends State<InicioTab> {
   final _servico = MedicamentoService();
+  final _doseService = DoseService();
 
   List<Medicamento> _medicamentos = [];
+
+  /// Doses de hoje já tomadas, pela chave da dose (veja Agenda.chave).
+  Map<String, RegistroDose> _registros = {};
+
+  /// Doses com um pedido em andamento (para desativar o botão).
+  final Set<String> _ocupadas = {};
+
   bool _carregando = true;
   String? _erro;
 
@@ -55,14 +65,26 @@ class _InicioTabState extends State<InicioTab> {
 
   Future<void> _carregar() async {
     try {
-      final lista = await _servico.listar(somenteAtivos: true);
+      final hoje = DateTime.now();
+
+      final resultados = await Future.wait<Object>([
+        _servico.listar(somenteAtivos: true),
+        _doseService.listar(inicio: hoje, fim: hoje),
+      ]);
 
       if (!mounted) {
         return;
       }
 
+      final lista = resultados[0] as List<Medicamento>;
+      final registros = resultados[1] as List<RegistroDose>;
+
       setState(() {
         _medicamentos = lista;
+        _registros = {
+          for (final r in registros)
+            Agenda.chave(r.medicamentoId, r.horarioPrevisto): r,
+        };
         _erro = null;
         _carregando = false;
       });
@@ -75,6 +97,59 @@ class _InicioTabState extends State<InicioTab> {
         _erro = e.mensagem;
         _carregando = false;
       });
+    }
+  }
+
+  void _mostrarMensagem(String texto) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(texto)));
+  }
+
+  Future<void> _tomar(DoseAgendada dose) async {
+    final chave = Agenda.chave(dose.medicamento.id, dose.horario);
+
+    setState(() => _ocupadas.add(chave));
+
+    try {
+      await _doseService.registrar(
+        medicamentoId: dose.medicamento.id,
+        horarioPrevisto: dose.horario,
+      );
+
+      DadosApp.mudou();
+
+      _mostrarMensagem('${dose.medicamento.nome}: dose registrada!');
+    } on ApiException catch (e) {
+      _mostrarMensagem(e.mensagem);
+    } finally {
+      if (mounted) {
+        setState(() => _ocupadas.remove(chave));
+      }
+    }
+  }
+
+  Future<void> _desfazer(DoseAgendada dose, RegistroDose registro) async {
+    final chave = Agenda.chave(dose.medicamento.id, dose.horario);
+
+    setState(() => _ocupadas.add(chave));
+
+    try {
+      await _doseService.desfazer(registro.id);
+
+      DadosApp.mudou();
+
+      _mostrarMensagem('Registro desfeito.');
+    } on ApiException catch (e) {
+      _mostrarMensagem(e.mensagem);
+    } finally {
+      if (mounted) {
+        setState(() => _ocupadas.remove(chave));
+      }
     }
   }
 
@@ -101,6 +176,13 @@ class _InicioTabState extends State<InicioTab> {
               nome: usuario?.primeiroNome ?? '',
               data: _dataPorExtenso(),
               totalDoses: _carregando || _erro != null ? null : doses.length,
+              tomadas: doses
+                  .where(
+                    (d) => _registros.containsKey(
+                      Agenda.chave(d.medicamento.id, d.horario),
+                    ),
+                  )
+                  .length,
             ),
             Center(
               child: ConstrainedBox(
@@ -114,6 +196,20 @@ class _InicioTabState extends State<InicioTab> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _cartaoDaDose(DoseAgendada dose, DateTime agora) {
+    final chave = Agenda.chave(dose.medicamento.id, dose.horario);
+    final registro = _registros[chave];
+
+    return DoseCard(
+      dose: dose,
+      status: Agenda.status(dose.horario, agora, tomado: registro != null),
+      horarioTomado: registro?.horarioTomado,
+      aoTomar: registro == null ? () => _tomar(dose) : null,
+      aoDesfazer: registro == null ? null : () => _desfazer(dose, registro),
+      ocupado: _ocupadas.contains(chave),
     );
   }
 
@@ -165,10 +261,7 @@ class _InicioTabState extends State<InicioTab> {
         ),
         const SizedBox(height: 14),
         for (final dose in doses) ...[
-          DoseCard(
-            dose: dose,
-            status: Agenda.status(dose.horario, agora),
-          ),
+          _cartaoDaDose(dose, agora),
           const SizedBox(height: 12),
         ],
       ],
@@ -181,11 +274,13 @@ class _Cabecalho extends StatelessWidget {
   final String nome;
   final String data;
   final int? totalDoses;
+  final int tomadas;
 
   const _Cabecalho({
     required this.nome,
     required this.data,
     required this.totalDoses,
+    required this.tomadas,
   });
 
   @override
@@ -233,9 +328,11 @@ class _Cabecalho extends StatelessWidget {
                       child: Text(
                         totalDoses == 0
                             ? 'Nenhuma dose hoje'
-                            : totalDoses == 1
-                                ? '1 dose hoje'
-                                : '$totalDoses doses hoje',
+                            : tomadas > 0
+                                ? '$tomadas de $totalDoses ${totalDoses == 1 ? 'dose tomada' : 'doses tomadas'}'
+                                : totalDoses == 1
+                                    ? '1 dose hoje'
+                                    : '$totalDoses doses hoje',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,

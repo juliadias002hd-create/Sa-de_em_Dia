@@ -32,6 +32,7 @@ const { sucesso, erro } = require('./utils/resposta');
 const authRoutes = require('./routes/auth_routes');
 const receitaRoutes = require('./routes/receita_routes');
 const medicamentoRoutes = require('./routes/medicamento_routes');
+const doseRoutes = require('./routes/dose_routes');
 
 const app = express();
 
@@ -76,6 +77,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/receitas', receitaRoutes);
 
 app.use('/api/medicamentos', medicamentoRoutes);
+
+app.use('/api/doses', doseRoutes);
 
 
 // ========================================
