@@ -53,6 +53,21 @@ class Validators {
     return null;
   }
 
+  /// Código de 6 dígitos enviado por e-mail.
+  static String? codigo(String? valor) {
+    final texto = (valor ?? '').trim();
+
+    if (texto.isEmpty) {
+      return 'Informe o código que você recebeu por e-mail.';
+    }
+
+    if (!RegExp(r'^\d{6}$').hasMatch(texto)) {
+      return 'O código tem 6 números.';
+    }
+
+    return null;
+  }
+
   static String? Function(String?) confirmarSenha(String Function() senhaAtual) {
     return (valor) {
       if (valor == null || valor.isEmpty) {

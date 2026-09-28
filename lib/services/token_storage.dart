@@ -31,4 +31,19 @@ class TokenStorage {
       await _armazenamento.delete(key: _chave);
     } catch (_) {}
   }
+
+  /// Marcas simples do tipo "já fiz isso" (ex.: já pedi uma permissão).
+  static Future<bool> lerMarca(String nome) async {
+    try {
+      return await _armazenamento.read(key: 'marca_$nome') == '1';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> salvarMarca(String nome) async {
+    try {
+      await _armazenamento.write(key: 'marca_$nome', value: '1');
+    } catch (_) {}
+  }
 }

@@ -7,6 +7,7 @@ import '../../utils/validators.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 import '../cadastro/cadastro_screen.dart';
+import 'esqueci_senha_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -77,6 +78,23 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _esqueciSenha() async {
+    final email = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => EsqueciSenhaScreen(
+          emailInicial: _emailController.text.trim(),
+        ),
+      ),
+    );
+
+    // Voltou com a senha trocada: deixa o e-mail preenchido.
+    if (email != null && mounted) {
+      _emailController.text = email;
+      _senhaController.clear();
+      _mostrarMensagem('Senha alterada! Entre com a nova senha.');
+    }
+  }
+
   Future<void> _criarConta() async {
     final email = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (_) => const CadastroScreen()),
@@ -116,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: context.cartao,
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -132,19 +150,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'Entrar',
                                       style: TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.w800,
-                                        color: AppColors.texto,
+                                        color: context.texto,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
-                                    const Text(
+                                    Text(
                                       'Acesse suas receitas e lembretes.',
                                       style: TextStyle(
-                                        color: AppColors.textoSuave,
+                                        color: context.textoSuave,
                                       ),
                                     ),
                                     const SizedBox(height: 22),
@@ -173,7 +191,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                       autofill: const [AutofillHints.password],
                                       desativado: _carregando,
                                     ),
-                                    const SizedBox(height: 24),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton(
+                                        onPressed:
+                                            _carregando ? null : _esqueciSenha,
+                                        child: const Text('Esqueci minha senha'),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
                                     AppButton(
                                       texto: 'ENTRAR',
                                       carregando: _carregando,

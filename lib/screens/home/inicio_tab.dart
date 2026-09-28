@@ -251,12 +251,12 @@ class _InicioTabState extends State<InicioTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Medicamentos de hoje',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w800,
-            color: AppColors.texto,
+            color: context.texto,
           ),
         ),
         const SizedBox(height: 14),

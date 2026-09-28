@@ -50,16 +50,16 @@ class MedicamentoCard extends StatelessWidget {
                   children: [
                     Text(
                       m.nome,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.texto,
+                        color: context.texto,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       m.dosagem,
-                      style: const TextStyle(color: AppColors.textoSuave),
+                      style: TextStyle(color: context.textoSuave),
                     ),
                     const SizedBox(height: 10),
                     Wrap(
@@ -89,10 +89,10 @@ class MedicamentoCard extends StatelessWidget {
                       const SizedBox(height: 10),
                       Text(
                         m.observacoes!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontStyle: FontStyle.italic,
-                          color: AppColors.textoSuave,
+                          color: context.textoSuave,
                         ),
                       ),
                     ],
@@ -128,9 +128,9 @@ class MedicamentoCard extends StatelessWidget {
 
 
 /// Cores e rótulos de cada situação de uma dose.
-(String, Color) situacaoDaDose(StatusDose status) {
+(String, Color) situacaoDaDose(BuildContext context, StatusDose status) {
   return switch (status) {
-    StatusDose.aTomar => ('A tomar', AppColors.roxo),
+    StatusDose.aTomar => ('A tomar', context.destaque),
     StatusDose.tomado => ('Tomado', AppColors.sucesso),
     StatusDose.atrasado => ('Atrasado', AppColors.alerta),
   };
@@ -166,113 +166,215 @@ class DoseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (rotulo, cor) = situacaoDaDose(status);
+    final (rotulo, cor) = situacaoDaDose(context, status);
 
     final m = dose.medicamento;
 
+    // Com a letra grande, o cartão passa a ter duas linhas (informações em
+    // cima; situação e botões embaixo), para nada ficar espremido.
+    final letraGrande = MediaQuery.textScalerOf(context).scale(1.0) >= 1.25;
+
+    final horario = Container(
+      // Largura mínima (e não fixa): cresce junto com a letra.
+      constraints: const BoxConstraints(minWidth: 76),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        Datas.hora(dose.horario.hour, dose.horario.minute),
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          color: cor,
+        ),
+      ),
+    );
+
+    final informacoes = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          m.nome,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: context.texto,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          horarioTomado == null
+              ? m.dosagem
+              : '${m.dosagem} • tomado às ${Datas.hora(horarioTomado!.hour, horarioTomado!.minute)}',
+          style: TextStyle(
+            fontSize: 13,
+            color: context.textoSuave,
+          ),
+        ),
+        // De qual receita é: diferencia dois medicamentos iguais.
+        if (m.medico != null) ...[
+          const SizedBox(height: 2),
+          Row(
+            children: [
+              Icon(
+                Icons.receipt_long_rounded,
+                size: 13,
+                color: context.textoSuave,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  m.medico!,
+                  maxLines: letraGrande ? 2 : 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.textoSuave,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+
+    final situacao = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        rotulo,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: cor,
+        ),
+      ),
+    );
+
+    final tomar = aoTomar == null
+        ? null
+        : ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 34),
+            child: FilledButton(
+              onPressed: ocupado ? null : aoTomar,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.sucesso,
+                minimumSize: const Size(0, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              child: const Text('TOMAR'),
+            ),
+          );
+
+    final desfazer = aoDesfazer == null
+        ? null
+        : ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 30),
+            child: TextButton(
+              onPressed: ocupado ? null : aoDesfazer,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 30),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                textStyle: const TextStyle(fontSize: 12),
+              ),
+              child: const Text('Desfazer'),
+            ),
+          );
+
+    return LayoutBuilder(
+      builder: (context, restricoes) {
+        // Empilha quando a letra é grande OU quando a tela é estreita para o
+        // tamanho da letra. 315 é a largura mínima (já descontada a escala)
+        // em que a versão de uma linha cabe sem estourar.
+        final empilhar = letraGrande ||
+            restricoes.maxWidth / MediaQuery.textScalerOf(context).scale(1.0) < 315;
+
+        return empilhar
+            ? _duasLinhas(horario, informacoes, situacao, tomar, desfazer)
+            : _umaLinha(horario, informacoes, situacao, tomar, desfazer);
+      },
+    );
+  }
+
+  Widget _duasLinhas(
+    Widget horario,
+    Widget informacoes,
+    Widget situacao,
+    Widget? tomar,
+    Widget? desfazer,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                horario,
+                const SizedBox(width: 16),
+                Expanded(child: informacoes),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                situacao,
+                ?tomar,
+                ?desfazer,
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _umaLinha(
+    Widget horario,
+    Widget informacoes,
+    Widget situacao,
+    Widget? tomar,
+    Widget? desfazer,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Container(
-              width: 76,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: cor.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Text(
-                Datas.hora(dose.horario.hour, dose.horario.minute),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: cor,
-                ),
-              ),
-            ),
+            horario,
             const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    m.nome,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.texto,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    horarioTomado == null
-                        ? m.dosagem
-                        : '${m.dosagem} • tomado às ${Datas.hora(horarioTomado!.hour, horarioTomado!.minute)}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textoSuave,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            Expanded(child: informacoes),
             const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: cor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    rotulo,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: cor,
-                    ),
-                  ),
-                ),
-                if (aoTomar != null) ...[
+                situacao,
+                if (tomar != null) ...[
                   const SizedBox(height: 8),
-                  SizedBox(
-                    height: 34,
-                    child: FilledButton(
-                      onPressed: ocupado ? null : aoTomar,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.sucesso,
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        textStyle: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      child: const Text('TOMAR'),
-                    ),
-                  ),
+                  tomar,
                 ],
-                if (aoDesfazer != null) ...[
+                if (desfazer != null) ...[
                   const SizedBox(height: 4),
-                  SizedBox(
-                    height: 30,
-                    child: TextButton(
-                      onPressed: ocupado ? null : aoDesfazer,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        textStyle: const TextStyle(fontSize: 12),
-                      ),
-                      child: const Text('Desfazer'),
-                    ),
-                  ),
+                  desfazer,
                 ],
               ],
             ),
@@ -295,17 +397,17 @@ class _Etiqueta extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.fundo,
+        color: context.fundo,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icone, size: 14, color: AppColors.textoSuave),
+          Icon(icone, size: 14, color: context.textoSuave),
           const SizedBox(width: 4),
           Text(
             texto,
-            style: const TextStyle(fontSize: 12, color: AppColors.textoSuave),
+            style: TextStyle(fontSize: 12, color: context.textoSuave),
           ),
         ],
       ),

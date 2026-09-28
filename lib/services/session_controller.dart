@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/usuario.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
+import 'lembretes_controller.dart';
 import 'token_storage.dart';
 
 enum EstadoSessao { carregando, semConexao, deslogado, logado }
@@ -33,6 +34,10 @@ class SessionController extends ChangeNotifier {
     ApiService.instance.aoSessaoExpirar = () {
       _usuario = null;
       avisoLogin = 'Sua sessão expirou. Entre novamente.';
+
+      // Desliga o relógio de alertas, mas mantém os lembretes já agendados.
+      LembretesController.instance.parar(cancelarNotificacoes: false);
+
       _mudar(EstadoSessao.deslogado);
     };
 
@@ -70,6 +75,7 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> sair() async {
+    await LembretesController.instance.parar();
     await _auth.sair();
     _usuario = null;
     avisoLogin = null;

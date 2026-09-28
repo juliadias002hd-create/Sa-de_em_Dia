@@ -208,18 +208,18 @@ class _SecaoDia extends StatelessWidget {
               Expanded(
                 child: Text(
                   titulo,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.texto,
+                    color: context.texto,
                   ),
                 ),
               ),
               Text(
                 '${dia.tomadas} de ${dia.itens.length} tomadas',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textoSuave,
+                  color: context.textoSuave,
                 ),
               ),
             ],
@@ -249,7 +249,7 @@ class _Linha extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (rotulo, cor) = situacaoDaDose(item.status);
+    final (rotulo, cor) = situacaoDaDose(context, item.status);
 
     final tomado = item.horarioTomado;
 
@@ -257,14 +257,14 @@ class _Linha extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          SizedBox(
-            width: 52,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 52),
             child: Text(
               Datas.hora(item.horario.hour, item.horario.minute),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: AppColors.texto,
+                color: context.texto,
               ),
             ),
           ),
@@ -276,18 +276,18 @@ class _Linha extends StatelessWidget {
                   item.nome,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.texto,
+                    color: context.texto,
                   ),
                 ),
                 Text(
                   tomado == null
                       ? item.dosagem
                       : '${item.dosagem} • tomado às ${Datas.hora(tomado.hour, tomado.minute)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textoSuave,
+                    color: context.textoSuave,
                   ),
                 ),
               ],

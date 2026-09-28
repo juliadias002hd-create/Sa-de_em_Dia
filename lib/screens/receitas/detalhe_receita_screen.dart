@@ -330,17 +330,17 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  const Text(
+                  Text(
                     'Medicamentos',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.texto,
+                      color: context.texto,
                     ),
                   ),
                   const SizedBox(height: 12),
                   if (receita.medicamentos.isEmpty)
-                    const Card(
+                    Card(
                       child: Padding(
                         padding: EdgeInsets.all(24),
                         child: Column(
@@ -348,13 +348,13 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
                             Icon(
                               Icons.medication_liquid_rounded,
                               size: 40,
-                              color: AppColors.textoSuave,
+                              color: context.textoSuave,
                             ),
                             SizedBox(height: 10),
                             Text(
                               'Nenhum medicamento nesta receita.\nToque em "Medicamento" para adicionar.',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: AppColors.textoSuave),
+                              style: TextStyle(color: context.textoSuave),
                             ),
                           ],
                         ),
@@ -475,7 +475,7 @@ class _Arquivo extends StatelessWidget {
                   Container(
                     height: 240,
                     width: double.infinity,
-                    color: Colors.white,
+                    color: context.cartao,
                     child: Image.memory(bytes, fit: BoxFit.contain),
                   ),
                   Positioned(
@@ -523,12 +523,12 @@ class _AvisoArquivo extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         child: Row(
           children: [
-            Icon(icone, color: AppColors.roxo, size: 32),
+            Icon(icone, color: context.destaque, size: 32),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 texto,
-                style: const TextStyle(color: AppColors.texto),
+                style: TextStyle(color: context.texto),
               ),
             ),
           ],

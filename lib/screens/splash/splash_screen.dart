@@ -85,20 +85,20 @@ class _SemConexaoScreenState extends State<SemConexaoScreen> {
                   color: AppColors.roxo,
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   ApiService.mensagemSemConexao,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.texto,
+                    color: context.texto,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Confira sua conexão e tente novamente.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textoSuave),
+                  style: TextStyle(color: context.textoSuave),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(

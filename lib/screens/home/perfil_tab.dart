@@ -4,8 +4,9 @@ import '../../services/session_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/app_button.dart';
+import '../configuracoes/configuracoes_screen.dart';
 
-/// Dados do paciente e botão de sair.
+/// Dados do paciente, acesso às configurações e botão de sair.
 class PerfilTab extends StatelessWidget {
   const PerfilTab({super.key});
 
@@ -70,10 +71,10 @@ class PerfilTab extends StatelessWidget {
                   Text(
                     usuario.nome,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.texto,
+                      color: context.texto,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -100,6 +101,36 @@ class PerfilTab extends StatelessWidget {
                               : Datas.isoParaBr(usuario.dataNascimento!),
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      leading: Icon(Icons.settings_rounded, color: context.destaque),
+                      title: Text(
+                        'Configurações',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: context.texto,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Tamanho da letra e tema claro ou escuro',
+                        style: TextStyle(color: context.textoSuave),
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: context.textoSuave,
+                      ),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ConfiguracoesScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -134,17 +165,17 @@ class _Linha extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icone, color: AppColors.roxo),
+      leading: Icon(icone, color: context.destaque),
       title: Text(
         rotulo,
-        style: const TextStyle(fontSize: 12, color: AppColors.textoSuave),
+        style: TextStyle(fontSize: 12, color: context.textoSuave),
       ),
       subtitle: Text(
         valor,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: AppColors.texto,
+          color: context.texto,
         ),
       ),
     );

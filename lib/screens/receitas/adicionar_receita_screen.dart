@@ -316,7 +316,7 @@ class _Previa extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: Container(
           height: 260,
-          color: Colors.white,
+          color: context.cartao,
           child: Image.memory(arquivo!.bytes, fit: BoxFit.contain),
         ),
       );
@@ -325,9 +325,9 @@ class _Previa extends StatelessWidget {
     return Container(
       height: 200,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cartao,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFDCD6EE)),
+        border: Border.all(color: context.bordaCampo),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -345,7 +345,7 @@ class _Previa extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.textoSuave),
+              style: TextStyle(color: context.textoSuave),
             ),
           ),
         ],

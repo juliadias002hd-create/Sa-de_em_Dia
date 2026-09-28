@@ -18,6 +18,13 @@ class Medicamento {
   /// partir dele; veja `lib/utils/agenda.dart`.
   final DateTime criadoEm;
 
+  /// Dados da receita deste medicamento (médico emissor, especialidade e
+  /// data). Nulos quando a API não os enviou (ex.: dentro do detalhe da
+  /// receita, onde já se sabe de qual receita se trata).
+  final String? medico;
+  final String? especialidade;
+  final DateTime? dataReceita;
+
   const Medicamento({
     required this.id,
     required this.receitaId,
@@ -29,10 +36,19 @@ class Medicamento {
     required this.ativo,
     required this.criadoEm,
     this.observacoes,
+    this.medico,
+    this.especialidade,
+    this.dataReceita,
   });
 
   factory Medicamento.fromJson(Map<String, dynamic> json) {
+    final receita = json['receita'] as Map<String, dynamic>?;
+    final data = receita?['data_receita'] as String?;
+
     return Medicamento(
+      medico: receita?['medico'] as String?,
+      especialidade: receita?['especialidade'] as String?,
+      dataReceita: data == null ? null : DateTime.parse(data),
       id: json['id'] as int,
       receitaId: json['receita_id'] as int,
       nome: json['nome'] as String,

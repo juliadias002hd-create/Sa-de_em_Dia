@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../services/lembretes_controller.dart';
 import '../historico/historico_screen.dart';
 import '../receitas/minhas_receitas_screen.dart';
 import 'inicio_tab.dart';
@@ -15,6 +16,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _aba = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Liga os lembretes assim que o paciente entra no app.
+    LembretesController.instance.iniciar();
+  }
 
   static const _paginas = <Widget>[
     InicioTab(),

@@ -31,26 +31,26 @@ class EstadoVazio extends StatelessWidget {
                 color: AppColors.roxo.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icone, size: 44, color: AppColors.roxo),
+              child: Icon(icone, size: 44, color: context.destaque),
             ),
             const SizedBox(height: 20),
             Text(
               titulo,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.texto,
+                color: context.texto,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               mensagem,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 height: 1.4,
-                color: AppColors.textoSuave,
+                color: context.textoSuave,
               ),
             ),
             if (acao != null) ...[

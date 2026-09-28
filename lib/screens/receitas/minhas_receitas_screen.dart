@@ -167,7 +167,7 @@ class _ReceitaCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.roxo.withValues(alpha: 0.10),
+                  color: context.destaque.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
@@ -176,7 +176,7 @@ class _ReceitaCard extends StatelessWidget {
                       : receita.ehImagem
                           ? Icons.image_rounded
                           : Icons.receipt_long_rounded,
-                  color: AppColors.roxo,
+                  color: context.destaque,
                 ),
               ),
               const SizedBox(width: 14),
@@ -188,10 +188,10 @@ class _ReceitaCard extends StatelessWidget {
                       receita.medico,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.texto,
+                        color: context.texto,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -199,36 +199,36 @@ class _ReceitaCard extends StatelessWidget {
                       receita.especialidade,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.textoSuave),
+                      style: TextStyle(color: context.textoSuave),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.calendar_today_rounded,
                           size: 14,
-                          color: AppColors.textoSuave,
+                          color: context.textoSuave,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           Datas.paraBr(receita.dataReceita),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.textoSuave,
+                            color: context.textoSuave,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Icon(
+                        Icon(
                           Icons.medication_outlined,
                           size: 14,
-                          color: AppColors.textoSuave,
+                          color: context.textoSuave,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           total == 1 ? '1 medicamento' : '$total medicamentos',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.textoSuave,
+                            color: context.textoSuave,
                           ),
                         ),
                       ],
@@ -236,9 +236,9 @@ class _ReceitaCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.textoSuave,
+                color: context.textoSuave,
               ),
             ],
           ),
