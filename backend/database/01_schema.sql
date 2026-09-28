@@ -1,7 +1,5 @@
 -- =====================================================================
 -- SAÚDE EM DIA — SCRIPT DE CRIAÇÃO DO BANCO DE DADOS
--- Execute este arquivo inteiro no MySQL Workbench (Ctrl+Shift+Enter
--- executa tudo de uma vez).
 -- =====================================================================
 
 CREATE DATABASE IF NOT EXISTS saude_em_dia

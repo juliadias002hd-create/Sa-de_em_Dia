@@ -1,7 +1,5 @@
 -- =====================================================================
 -- SAÚDE EM DIA — DADOS DE TESTE
--- Execute depois do 01_schema.sql.
--- Pode rodar este arquivo mais de uma vez sem duplicar dados.
 --
 -- Usuário de teste:
 --   E-mail: julia@teste.com

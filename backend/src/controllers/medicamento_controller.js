@@ -23,7 +23,10 @@ const CAMPOS_MEDICAMENTO = `
     m.duracao_dias,
     m.observacoes,
     m.ativo,
-    m.criado_em
+    m.criado_em,
+    r.medico AS receita_medico,
+    r.especialidade AS receita_especialidade,
+    r.data_receita AS receita_data
 `;
 
 const INTERVALO_MAXIMO_HORAS = 168;   // 1 semana
@@ -45,7 +48,15 @@ function montarMedicamento(linha) {
         duracao_dias: linha.duracao_dias,
         observacoes: linha.observacoes,
         ativo: !!linha.ativo,
-        criado_em: linha.criado_em
+        criado_em: linha.criado_em,
+
+        // De qual receita é este medicamento (o app mostra isso no alerta
+        // para diferenciar medicamentos iguais de receitas diferentes).
+        receita: {
+            medico: linha.receita_medico,
+            especialidade: linha.receita_especialidade,
+            data_receita: linha.receita_data
+        }
     };
 }
 
@@ -286,6 +297,7 @@ async function listarPorReceita(req, res) {
             `
             SELECT ${CAMPOS_MEDICAMENTO}
             FROM medicamentos m
+            INNER JOIN receitas r ON r.id = m.receita_id
             WHERE m.receita_id = ?
             ORDER BY m.horario_inicio ASC, m.id ASC
             `,

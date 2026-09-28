@@ -39,7 +39,7 @@ async function autenticar(req, res, next) {
 
     try {
         const [usuarios] = await pool.execute(
-            'SELECT id, email, ativo FROM usuarios WHERE id = ?',
+            'SELECT id, email, ativo, senha_alterada_em FROM usuarios WHERE id = ?',
             [dados.id]
         );
 
@@ -49,6 +49,14 @@ async function autenticar(req, res, next) {
 
         if (!usuarios[0].ativo) {
             return erro(res, 403, 'Usuário inativo.');
+        }
+
+        // Se a senha foi redefinida depois deste login, a sessão antiga
+        // deixa de valer (protege quem teve a senha descoberta).
+        const alterada = usuarios[0].senha_alterada_em;
+
+        if (alterada && dados.iat * 1000 < new Date(alterada.replace(' ', 'T')).getTime()) {
+            return erro(res, 401, 'Sua senha foi alterada. Faça login novamente.');
         }
 
         req.usuario = {

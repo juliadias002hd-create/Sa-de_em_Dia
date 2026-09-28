@@ -22,6 +22,14 @@ if (process.env.JWT_SECRET.length < 16) {
     );
 }
 
+if (!process.env.SMTP_HOST) {
+    console.warn(
+        'AVISO: e-mail NÃO configurado (SMTP_HOST vazio no .env). ' +
+        'O "Esqueci minha senha" não envia e-mail: o código de 6 números ' +
+        'aparece AQUI, neste terminal. Veja backend/.env.example para configurar.'
+    );
+}
+
 
 const express = require('express');
 const cors = require('cors');

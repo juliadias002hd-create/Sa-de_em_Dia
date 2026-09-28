@@ -10,6 +10,11 @@ const {
     trocarSenha
 } = require('../controllers/auth_controller');
 
+const {
+    esqueciSenha,
+    redefinirSenha
+} = require('../controllers/senha_controller');
+
 const router = express.Router();
 
 
@@ -20,6 +25,12 @@ router.post('/register', cadastrar);
 
 // POST /api/auth/login
 router.post('/login', login);
+
+// POST /api/auth/forgot-password   (envia o código por e-mail)
+router.post('/forgot-password', esqueciSenha);
+
+// POST /api/auth/reset-password    (troca a senha com o código)
+router.post('/reset-password', redefinirSenha);
 
 
 // ---------- Rotas privadas (exigem token) ----------
