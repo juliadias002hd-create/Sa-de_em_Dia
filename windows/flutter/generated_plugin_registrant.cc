@@ -14,6 +14,7 @@
 #include <firebase_storage/firebase_storage_plugin_c_api.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
 #include <flutter_timezone/flutter_timezone_plugin_c_api.h>
+#include <local_auth_windows/local_auth_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   AudioplayersWindowsPluginRegisterWithRegistrar(
@@ -32,4 +33,6 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
   FlutterTimezonePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterTimezonePluginCApi"));
+  LocalAuthPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("LocalAuthPlugin"));
 }

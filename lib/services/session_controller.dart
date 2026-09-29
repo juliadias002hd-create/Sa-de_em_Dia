@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/usuario.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
+import 'bloqueio_controller.dart';
 import 'lembretes_controller.dart';
 import 'token_storage.dart';
 
@@ -37,6 +38,7 @@ class SessionController extends ChangeNotifier {
 
       // Desliga o relógio de alertas, mas mantém os lembretes já agendados.
       LembretesController.instance.parar(cancelarNotificacoes: false);
+      BloqueioController.instance.liberar();
 
       _mudar(EstadoSessao.deslogado);
     };
@@ -54,6 +56,10 @@ class SessionController extends ChangeNotifier {
 
     try {
       _usuario = await _auth.meusDados();
+
+      // App aberto com a biometria ligada: começa bloqueado.
+      BloqueioController.instance.bloquearSeAtivo();
+
       _mudar(EstadoSessao.logado);
     } on ApiException catch (e) {
       if (e.statusCode == null) {
@@ -71,12 +77,18 @@ class SessionController extends ChangeNotifier {
   Future<void> entrar(String email, String senha) async {
     _usuario = await _auth.entrar(email: email, senha: senha);
     avisoLogin = null;
+    BloqueioController.instance.liberar();
     _mudar(EstadoSessao.logado);
   }
 
   Future<void> sair() async {
     await LembretesController.instance.parar();
     await _auth.sair();
+
+    // A biometria vale para a conta que a ligou: quem entrar depois começa
+    // sem ela.
+    await BloqueioController.instance.desligar();
+
     _usuario = null;
     avisoLogin = null;
     _mudar(EstadoSessao.deslogado);

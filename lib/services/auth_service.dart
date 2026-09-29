@@ -46,6 +46,25 @@ class AuthService {
     return Usuario.fromJson(resposta['data']['usuario']);
   }
 
+  /// Confere a senha de quem já está logado (usado no desbloqueio quando a
+  /// biometria não funciona). Senha errada NÃO derruba a sessão.
+  Future<void> confirmarSenha({
+    required String email,
+    required String senha,
+  }) async {
+    final resposta = await _api.post(
+      '/api/auth/login',
+      {'email': email, 'senha': senha},
+      expirarSessao: false,
+    );
+
+    final token = resposta['data']['token'] as String;
+
+    _api.definirToken(token);
+
+    await TokenStorage.salvar(token);
+  }
+
   /// POST /api/auth/forgot-password
   ///
   /// Pede o código de 6 dígitos por e-mail. A API responde igual exista ou

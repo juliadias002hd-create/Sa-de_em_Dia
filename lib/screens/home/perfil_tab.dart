@@ -117,7 +117,7 @@ class PerfilTab extends StatelessWidget {
                         ),
                       ),
                       subtitle: Text(
-                        'Tamanho da letra e tema claro ou escuro',
+                        'Tema, tamanho da letra e bloqueio com digital ou rosto',
                         style: TextStyle(color: context.textoSuave),
                       ),
                       trailing: Icon(

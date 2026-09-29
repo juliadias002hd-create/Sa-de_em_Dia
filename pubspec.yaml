@@ -50,6 +50,9 @@ dependencies:
   flutter_timezone: ^5.1.0
   audioplayers: ^6.8.1
   shared_preferences: ^2.5.5
+  local_auth: ^3.0.2
+  local_auth_android: ^2.2.0
+  local_auth_darwin: ^2.0.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -60,6 +63,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  plugin_platform_interface: ^2.1.8
+  local_auth_platform_interface: ^1.1.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

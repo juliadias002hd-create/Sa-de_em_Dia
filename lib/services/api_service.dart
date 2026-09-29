@@ -72,7 +72,13 @@ class ApiService {
     );
   }
 
-  Future<Map<String, dynamic>> post(String caminho, Map<String, dynamic> corpo) {
+  /// [expirarSessao] em false: um 401 aqui não derruba a sessão (usado ao
+  /// conferir a senha de quem já está logado).
+  Future<Map<String, dynamic>> post(
+    String caminho,
+    Map<String, dynamic> corpo, {
+    bool expirarSessao = true,
+  }) {
     return _executar(
       () => _cliente.post(
         _uri(caminho),
@@ -80,6 +86,7 @@ class ApiService {
         body: jsonEncode(corpo),
       ),
       ApiConfig.tempoLimite,
+      expirarSessao: expirarSessao,
     );
   }
 
@@ -162,12 +169,13 @@ class ApiService {
 
   Future<Map<String, dynamic>> _executar(
     Future<http.Response> Function() requisicao,
-    Duration tempoLimite,
-  ) async {
+    Duration tempoLimite, {
+    bool expirarSessao = true,
+  }) async {
     try {
       final resposta = await requisicao().timeout(tempoLimite);
 
-      return _tratar(resposta);
+      return _tratar(resposta, expirarSessao: expirarSessao);
     } on ApiException {
       rethrow;
     } on TimeoutException {
@@ -181,7 +189,7 @@ class ApiService {
     }
   }
 
-  Map<String, dynamic> _tratar(http.Response resposta) {
+  Map<String, dynamic> _tratar(http.Response resposta, {bool expirarSessao = true}) {
     Object? corpo;
 
     try {
@@ -206,7 +214,7 @@ class ApiService {
     }
 
     // Token recusado: a sessão acabou, volta para o login.
-    if (resposta.statusCode == 401 && _token != null) {
+    if (resposta.statusCode == 401 && _token != null && expirarSessao) {
       _token = null;
       aoSessaoExpirar?.call();
     }

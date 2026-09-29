@@ -33,7 +33,15 @@ class LembretesController {
   final DoseService _doses = DoseService();
 
   bool _ativo = false;
-  bool _alertaAberto = false;
+
+  /// Vale `true` enquanto a tela "Hora do ..." está aberta. O bloqueio por
+  /// biometria escuta isto para nunca esconder um alarme tocando.
+  final ValueNotifier<bool> alertaVisivel = ValueNotifier<bool>(false);
+
+  bool get _alertaAberto => alertaVisivel.value;
+
+  set _alertaAberto(bool valor) => alertaVisivel.value = valor;
+
   Timer? _relogio;
 
   List<Medicamento> _lista = [];

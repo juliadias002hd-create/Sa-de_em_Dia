@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'screens/bloqueio/bloqueio_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/splash/splash_screen.dart';
+import 'services/bloqueio_controller.dart';
 import 'services/configuracoes_controller.dart';
+import 'services/lembretes_controller.dart';
 import 'services/navegacao.dart';
 import 'services/session_controller.dart';
 import 'theme/app_theme.dart';
@@ -68,7 +71,7 @@ class _SaudeEmDiaAppState extends State<SaudeEmDiaApp> {
 
             return MediaQuery(
               data: dados.copyWith(textScaler: TextScaler.linear(escala)),
-              child: filho!,
+              child: _ComBloqueio(filho: filho!),
             );
           },
 
@@ -93,6 +96,49 @@ class _SaudeEmDiaAppState extends State<SaudeEmDiaApp> {
               };
             },
           ),
+        );
+      },
+    );
+  }
+}
+
+
+/// Cobre o app com a tela de bloqueio quando a biometria está ligada e o app
+/// está bloqueado. Nunca cobre o alarme: se a tela "Hora do ..." está aberta,
+/// ela continua visível (e o bloqueio volta assim que ela fechar).
+class _ComBloqueio extends StatelessWidget {
+  final Widget filho;
+
+  const _ComBloqueio({required this.filho});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        BloqueioController.instance,
+        LembretesController.instance.alertaVisivel,
+      ]),
+      builder: (context, _) {
+        final bloquear = BloqueioController.instance.bloqueado &&
+            !LembretesController.instance.alertaVisivel.value;
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            // Enquanto bloqueado, o que está por baixo não recebe toque nem
+            // aparece para leitores de tela.
+            ExcludeSemantics(excluding: bloquear, child: filho),
+            // O Overlay próprio é necessário porque este ponto fica acima do
+            // Navigator (campos de texto e menus precisam de um).
+            if (bloquear)
+              Positioned.fill(
+                child: Overlay(
+                  initialEntries: [
+                    OverlayEntry(builder: (_) => const BloqueioScreen()),
+                  ],
+                ),
+              ),
+          ],
         );
       },
     );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/configuracoes_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_button.dart';
+import 'secao_biometria.dart';
 
 /// Configurações de aparência: tema (claro, escuro ou automático) e tamanho
 /// da letra. As mudanças valem na hora, no app inteiro.
@@ -30,6 +31,8 @@ class ConfiguracoesScreen extends StatelessWidget {
                       _SecaoTema(config: config),
                       const SizedBox(height: 20),
                       _SecaoFonte(config: config),
+                      const SizedBox(height: 20),
+                      const SecaoBiometria(),
                       const SizedBox(height: 28),
                       AppButton(
                         texto: 'RESTAURAR PADRÃO',

@@ -46,4 +46,10 @@ class TokenStorage {
       await _armazenamento.write(key: 'marca_$nome', value: '1');
     } catch (_) {}
   }
+
+  static Future<void> apagarMarca(String nome) async {
+    try {
+      await _armazenamento.delete(key: 'marca_$nome');
+    } catch (_) {}
+  }
 }

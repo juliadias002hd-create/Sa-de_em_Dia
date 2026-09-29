@@ -15,6 +15,9 @@
          está bloqueado ou com a tela apagada. -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
 
+    <!-- Digital / reconhecimento facial para desbloquear o app. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+
     <application
         android:label="saude_em_dia"
         android:name="${applicationName}"

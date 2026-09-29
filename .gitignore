@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/build/
+
+# Configuração do Firebase: o app não usa (banco de dados é o MySQL), e o
+# arquivo tem chaves do projeto que não devem ir para o repositório.
+android/app/google-services.json
+lib/firebase_options.dart
+firebase.json
