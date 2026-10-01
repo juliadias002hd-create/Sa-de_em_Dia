@@ -25,10 +25,16 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   final _medicamentos = MedicamentoService();
   final _doses = DoseService();
 
-  int _periodoDias = 7;
+  /// Período escolhido: 7, 30 ou `null` (Tudo, desde o medicamento mais
+  /// antigo cadastrado).
+  int? _periodoDias = 7;
   List<DiaHistorico> _dias = [];
   bool _carregando = true;
   String? _erro;
+
+  /// A API só aceita até 92 dias por pedido; "Tudo" pode passar disso,
+  /// então busca em pedaços e junta o resultado.
+  static const int _maxDiasPorPedido = 92;
 
   @override
   void initState() {
@@ -47,21 +53,24 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
 
   Future<void> _carregar() async {
     final agora = DateTime.now();
-    final inicio = DateTime(agora.year, agora.month, agora.day - (_periodoDias - 1));
 
     try {
-      final resultados = await Future.wait<Object>([
-        _medicamentos.listar(),
-        _doses.listar(inicio: inicio, fim: agora),
-      ]);
+      final medicamentos = await _medicamentos.listar();
+
+      if (!mounted) {
+        return;
+      }
+
+      final inicio = _calcularInicio(agora, medicamentos);
+      final registros = await _buscarRegistros(inicio: inicio, fim: agora);
 
       if (!mounted) {
         return;
       }
 
       final dias = Agenda.historico(
-        medicamentos: resultados[0] as List<Medicamento>,
-        registros: resultados[1] as List<RegistroDose>,
+        medicamentos: medicamentos,
+        registros: registros,
         inicio: inicio,
         fim: agora,
         agora: agora,
@@ -84,7 +93,54 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     }
   }
 
-  void _trocarPeriodo(int dias) {
+  /// Com um período (7/30 dias): esses dias para trás, a partir de hoje.
+  /// Com "Tudo": desde o dia em que o medicamento mais antigo foi
+  /// cadastrado (ou hoje, se ainda não há nenhum).
+  DateTime _calcularInicio(DateTime agora, List<Medicamento> medicamentos) {
+    final hoje = DateTime(agora.year, agora.month, agora.day);
+
+    final periodo = _periodoDias;
+
+    if (periodo != null) {
+      return hoje.subtract(Duration(days: periodo - 1));
+    }
+
+    if (medicamentos.isEmpty) {
+      return hoje;
+    }
+
+    final maisAntigo = medicamentos
+        .map((m) => m.criadoEm)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+
+    return DateTime(maisAntigo.year, maisAntigo.month, maisAntigo.day);
+  }
+
+  /// Busca os registros de [inicio] a [fim], dividindo em vários pedidos
+  /// quando o período passa do limite que a API aceita de uma vez.
+  Future<List<RegistroDose>> _buscarRegistros({
+    required DateTime inicio,
+    required DateTime fim,
+  }) async {
+    final pedidos = <Future<List<RegistroDose>>>[];
+
+    var comeco = inicio;
+
+    while (!comeco.isAfter(fim)) {
+      final tetoDoPedaco = comeco.add(const Duration(days: _maxDiasPorPedido - 1));
+      final fimDoPedaco = tetoDoPedaco.isAfter(fim) ? fim : tetoDoPedaco;
+
+      pedidos.add(_doses.listar(inicio: comeco, fim: fimDoPedaco));
+
+      comeco = fimDoPedaco.add(const Duration(days: 1));
+    }
+
+    final resultados = await Future.wait(pedidos);
+
+    return resultados.expand((lista) => lista).toList();
+  }
+
+  void _trocarPeriodo(int? dias) {
     setState(() {
       _periodoDias = dias;
       _carregando = true;
@@ -126,11 +182,12 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                 constraints: const BoxConstraints(maxWidth: 600),
                 child: SizedBox(
                   width: double.infinity,
-                  child: SegmentedButton<int>(
+                  child: SegmentedButton<int?>(
                     showSelectedIcon: false,
                     segments: const [
                       ButtonSegment(value: 7, label: Text('7 dias')),
                       ButtonSegment(value: 30, label: Text('30 dias')),
+                      ButtonSegment(value: null, label: Text('Tudo')),
                     ],
                     selected: {_periodoDias},
                     onSelectionChanged: (s) => _trocarPeriodo(s.first),
