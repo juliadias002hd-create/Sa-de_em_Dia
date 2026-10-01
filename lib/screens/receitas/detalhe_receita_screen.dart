@@ -13,6 +13,7 @@ import '../../utils/formatters.dart';
 import '../../widgets/estado_vazio.dart';
 import '../../widgets/medicamentos_card.dart';
 import '../medicamentos/cadastrar_medicamento_screen.dart';
+import 'adicionar_receita_screen.dart';
 
 /// Uma receita com o arquivo anexado e os medicamentos dela.
 class DetalheReceitaScreen extends StatefulWidget {
@@ -134,6 +135,24 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
     );
 
     return resposta == true;
+  }
+
+  Future<void> _editarReceita() async {
+    final receita = _receita;
+
+    if (receita == null) {
+      return;
+    }
+
+    final atualizou = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => AdicionarReceitaScreen(receita: receita),
+      ),
+    );
+
+    if (atualizou == true) {
+      _carregar();
+    }
   }
 
   Future<void> _adicionarMedicamento() {
@@ -271,8 +290,15 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
           if (_receita != null)
             PopupMenuButton<String>(
               tooltip: 'Mais opções',
-              onSelected: (_) => _excluirReceita(),
+              onSelected: (valor) {
+                if (valor == 'editar') {
+                  _editarReceita();
+                } else {
+                  _excluirReceita();
+                }
+              },
               itemBuilder: (_) => const [
+                PopupMenuItem(value: 'editar', child: Text('Editar receita')),
                 PopupMenuItem(value: 'excluir', child: Text('Excluir receita')),
               ],
             ),

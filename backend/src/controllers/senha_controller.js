@@ -25,12 +25,12 @@ const {
 //     deixam de valer.
 //
 // Proteções: código guardado só como hash; validade curta; no máximo
-// 5 tentativas por código; no máximo 3 códigos por hora por usuário;
+// 5 tentativas por código; no máximo 6 códigos por hora por usuário;
 // código de uso único.
 
 const VALIDADE_MINUTOS = 15;
 const MAX_TENTATIVAS = 5;
-const MAX_CODIGOS_POR_HORA = 3;
+const MAX_CODIGOS_POR_HORA = 6;
 
 const MENSAGEM_ENVIO =
     'Se este e-mail estiver cadastrado, enviamos um código de 6 dígitos. ' +

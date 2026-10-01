@@ -45,6 +45,31 @@ class ReceitaService {
     return Receita.fromJson(resposta['data']['receita']);
   }
 
+  /// Atualiza a receita. O arquivo é opcional: sem [arquivo] e sem
+  /// [removerArquivo], o arquivo atual é mantido.
+  Future<Receita> atualizar({
+    required int id,
+    required String dataReceitaIso,
+    required String medico,
+    required String especialidade,
+    ArquivoParaEnvio? arquivo,
+    bool removerArquivo = false,
+  }) async {
+    final resposta = await _api.enviarArquivo(
+      'PUT',
+      '/api/receitas/$id',
+      campos: {
+        'data_receita': dataReceitaIso,
+        'medico': medico,
+        'especialidade': especialidade,
+        if (removerArquivo) 'remover_arquivo': 'true',
+      },
+      arquivo: arquivo,
+    );
+
+    return Receita.fromJson(resposta['data']['receita']);
+  }
+
   Future<void> excluir(int id) async {
     await _api.delete('/api/receitas/$id');
   }

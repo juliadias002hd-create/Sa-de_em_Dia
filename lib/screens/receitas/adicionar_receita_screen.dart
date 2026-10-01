@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
+import '../../models/receita.dart';
 import '../../services/api_service.dart';
 import '../../services/dados_notifier.dart';
 import '../../services/file_service.dart';
@@ -12,9 +15,14 @@ import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 import 'detalhe_receita_screen.dart';
 
-/// Cadastro de uma receita: foto/galeria/PDF + data, médico e especialidade.
+/// Cadastra (ou edita) uma receita: foto/galeria/PDF + data, médico e
+/// especialidade.
+///
+/// Sem [receita]: cadastro novo. Com [receita]: edição dela.
 class AdicionarReceitaScreen extends StatefulWidget {
-  const AdicionarReceitaScreen({super.key});
+  final Receita? receita;
+
+  const AdicionarReceitaScreen({super.key, this.receita});
 
   @override
   State<AdicionarReceitaScreen> createState() => _AdicionarReceitaScreenState();
@@ -32,16 +40,47 @@ class _AdicionarReceitaScreenState extends State<AdicionarReceitaScreen> {
   final _medicoController = TextEditingController();
   final _especialidadeController = TextEditingController();
 
+  /// Um arquivo novo, escolhido agora (substitui o atual, se houver).
   ArquivoParaEnvio? _arquivo;
   bool _ehPdf = false;
+
+  /// A pessoa pediu para remover o arquivo atual (sem escolher outro).
+  bool _removerArquivoAtual = false;
+
+  /// Bytes do arquivo atual da receita, carregados para a prévia.
+  Future<Uint8List>? _imagemAtual;
+
   bool _carregando = false;
+
+  bool get _editando => widget.receita != null;
+
+  /// Há um arquivo (novo ou o atual) que vai ficar valendo ao salvar.
+  bool get _temArquivo => _arquivo != null || (_mostrarArquivoAtual);
+
+  bool get _mostrarArquivoAtual =>
+      _editando &&
+      !_removerArquivoAtual &&
+      _arquivo == null &&
+      widget.receita!.temArquivo;
 
   @override
   void initState() {
     super.initState();
 
-    // A receita costuma ser de hoje; o usuário pode trocar.
-    _dataController.text = Datas.paraBr(DateTime.now());
+    final r = widget.receita;
+
+    if (r != null) {
+      _dataController.text = Datas.paraBr(r.dataReceita);
+      _medicoController.text = r.medico;
+      _especialidadeController.text = r.especialidade;
+
+      if (r.ehImagem) {
+        _imagemAtual = _servico.baixarArquivo(r.id);
+      }
+    } else {
+      // A receita costuma ser de hoje; o usuário pode trocar.
+      _dataController.text = Datas.paraBr(DateTime.now());
+    }
   }
 
   @override
@@ -81,12 +120,20 @@ class _AdicionarReceitaScreenState extends State<AdicionarReceitaScreen> {
       setState(() {
         _arquivo = resultado;
         _ehPdf = pdf;
+        _removerArquivoAtual = false;
       });
     } catch (_) {
       _mostrarMensagem(
         'Não foi possível acessar a câmera ou os arquivos. Verifique as permissões do aplicativo.',
       );
     }
+  }
+
+  void _removerArquivo() {
+    setState(() {
+      _arquivo = null;
+      _removerArquivoAtual = true;
+    });
   }
 
   Future<void> _escolherData() async {
@@ -135,17 +182,46 @@ class _AdicionarReceitaScreenState extends State<AdicionarReceitaScreen> {
       return;
     }
 
-    if (_arquivo == null && !await _confirmarSemArquivo()) {
+    if (!_temArquivo && !await _confirmarSemArquivo()) {
       return;
     }
 
     setState(() => _carregando = true);
 
     try {
+      final dataIso = Datas.brParaIso(_dataController.text.trim())!;
+      final medico = _medicoController.text.trim();
+      final especialidade = _especialidadeController.text.trim();
+
+      if (_editando) {
+        await _servico.atualizar(
+          id: widget.receita!.id,
+          dataReceitaIso: dataIso,
+          medico: medico,
+          especialidade: especialidade,
+          arquivo: _arquivo,
+          removerArquivo: _removerArquivoAtual,
+        );
+
+        DadosApp.mudou();
+
+        if (!mounted) {
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Receita atualizada com sucesso!')),
+        );
+
+        // O detalhe da receita (tela anterior) recarrega sozinho.
+        Navigator.of(context).pop(true);
+        return;
+      }
+
       final receita = await _servico.criar(
-        dataReceitaIso: Datas.brParaIso(_dataController.text.trim())!,
-        medico: _medicoController.text.trim(),
-        especialidade: _especialidadeController.text.trim(),
+        dataReceitaIso: dataIso,
+        medico: medico,
+        especialidade: especialidade,
         arquivo: _arquivo,
       );
 
@@ -180,7 +256,9 @@ class _AdicionarReceitaScreenState extends State<AdicionarReceitaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Adicionar Receita')),
+      appBar: AppBar(
+        title: Text(_editando ? 'Editar Receita' : 'Adicionar Receita'),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -193,8 +271,29 @@ class _AdicionarReceitaScreenState extends State<AdicionarReceitaScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _Previa(arquivo: _arquivo, ehPdf: _ehPdf),
-                    const SizedBox(height: 16),
+                    _Previa(
+                      arquivo: _arquivo,
+                      ehPdf: _ehPdf,
+                      mostrarArquivoAtual: _mostrarArquivoAtual,
+                      nomeArquivoAtual: widget.receita?.nomeArquivo,
+                      ehPdfAtual: widget.receita?.ehPdf ?? false,
+                      imagemAtual: _imagemAtual,
+                    ),
+                    if (_temArquivo) ...[
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: _carregando ? null : _removerArquivo,
+                          icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                          label: const Text('Remover arquivo'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.perigo,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
                     AppButton(
                       texto: 'TIRAR FOTO',
                       icone: Icons.camera_alt_rounded,
@@ -286,7 +385,7 @@ class _AdicionarReceitaScreenState extends State<AdicionarReceitaScreen> {
                     ),
                     const SizedBox(height: 28),
                     AppButton(
-                      texto: 'CONFIRMAR',
+                      texto: _editando ? 'SALVAR' : 'CONFIRMAR',
                       carregando: _carregando,
                       onPressed: _confirmar,
                     ),
@@ -302,12 +401,25 @@ class _AdicionarReceitaScreenState extends State<AdicionarReceitaScreen> {
 }
 
 
-/// Mostra a foto escolhida, o nome do PDF ou um espaço vazio.
+/// Mostra a foto escolhida agora, o arquivo já salvo na receita (ao
+/// editar), o nome do PDF ou um espaço vazio.
 class _Previa extends StatelessWidget {
   final ArquivoParaEnvio? arquivo;
   final bool ehPdf;
 
-  const _Previa({required this.arquivo, required this.ehPdf});
+  final bool mostrarArquivoAtual;
+  final String? nomeArquivoAtual;
+  final bool ehPdfAtual;
+  final Future<Uint8List>? imagemAtual;
+
+  const _Previa({
+    required this.arquivo,
+    required this.ehPdf,
+    required this.mostrarArquivoAtual,
+    required this.nomeArquivoAtual,
+    required this.ehPdfAtual,
+    required this.imagemAtual,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -322,6 +434,48 @@ class _Previa extends StatelessWidget {
       );
     }
 
+    if (arquivo == null && mostrarArquivoAtual) {
+      if (ehPdfAtual) {
+        return _vazio(context, icone: Icons.picture_as_pdf_rounded, texto: nomeArquivoAtual);
+      }
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          height: 260,
+          color: context.cartao,
+          child: FutureBuilder<Uint8List>(
+            future: imagemAtual,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return Image.memory(snapshot.data!, fit: BoxFit.contain);
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    size: 48,
+                    color: context.textoSuave,
+                  ),
+                );
+              }
+
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
+        ),
+      );
+    }
+
+    return _vazio(
+      context,
+      icone: arquivo != null ? Icons.picture_as_pdf_rounded : Icons.receipt_long_rounded,
+      texto: arquivo?.nome ?? 'Nenhuma receita selecionada',
+    );
+  }
+
+  Widget _vazio(BuildContext context, {required IconData icone, String? texto}) {
     return Container(
       height: 200,
       decoration: BoxDecoration(
@@ -332,16 +486,12 @@ class _Previa extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            arquivo != null ? Icons.picture_as_pdf_rounded : Icons.receipt_long_rounded,
-            size: 64,
-            color: AppColors.roxo,
-          ),
+          Icon(icone, size: 64, color: AppColors.roxo),
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              arquivo?.nome ?? 'Nenhuma receita selecionada',
+              texto ?? 'Nenhuma receita selecionada',
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
