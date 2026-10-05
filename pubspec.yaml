@@ -18,6 +18,30 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 version: 1.0.0+1
 
+# Ícone do app em todas as plataformas. Gerado com:
+#   dart run tool/crop_icon.dart   (recorta a logo original e prepara a
+#                                   camada de frente transparente)
+#   dart run flutter_launcher_icons
+#
+# assets/icone/app_icon_original.jpg é a logo como veio do usuário;
+# app_icon.png e app_icon_foreground.png são gerados a partir dela.
+flutter_launcher_icons:
+  image_path: "assets/icone/app_icon.png"
+  android: true
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icone/app_icon_foreground.png"
+  ios: true
+  web:
+    generate: true
+    background_color: "#ffffff"
+    theme_color: "#7138D4"
+  windows:
+    generate: true
+    icon_size: 256
+  macos:
+    generate: true
+
 environment:
   sdk: ^3.12.2
 
@@ -65,6 +89,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   plugin_platform_interface: ^2.1.8
   local_auth_platform_interface: ^1.1.0
+  flutter_launcher_icons: ^0.14.4
+  image: ^4.10.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -81,6 +107,7 @@ flutter:
   # (No celular, o som vem da própria notificação.)
   assets:
     - assets/sons/
+    - assets/imagens/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
