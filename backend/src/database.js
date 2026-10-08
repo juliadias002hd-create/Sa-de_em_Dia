@@ -12,7 +12,11 @@ const pool = mysql.createPool({
     dateStrings: true,
 
     waitForConnections: true,
-    connectionLimit: 10,
+    // Bancos gratuitos (ex.: Clever Cloud "Dev") limitam quantas conexões
+    // simultâneas aceitam — por isso isto é configurável pelo .env em vez
+    // de um número fixo. Sem DB_CONNECTION_LIMIT, usa 10 (bom para MySQL
+    // local, sem esse tipo de limite).
+    connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,
     queueLimit: 0
 });
 
